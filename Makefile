@@ -1,5 +1,3 @@
-# Makefile
-
 .PHONY: all clean build build/cuda build/linux build/darwin build/windows
 
 all: clean build
@@ -29,7 +27,8 @@ build/cuda:
 
 # Use the following target to run the example
 run: build
-	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(pwd)/build go run examples/add2matrices/main.go
+	go run examples/add2matrices/main.go
 
-test: build
+LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(pwd)/build
+test: clean build
 	go test -v .
