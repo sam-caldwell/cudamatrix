@@ -38,4 +38,4 @@ run: build
 test: clean build
 	@echo "testing..."
 	echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
-	LD_LIBRARY_PATH=${LD_LIBRARY_PATH} go test -v .
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH} go test -v -failfast .
