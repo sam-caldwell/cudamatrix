@@ -1,52 +1,25 @@
-#include <stdexcept>
+#ifndef EXCEPTIONS_H
+#define EXCEPTIONS_H
 
+#include <cuda_runtime.h>
 
-class CudaMallocExceptionGpuA: public std::runtime_error {
+class CudaException {
+private:
+    int errorState;
 public:
-    explicit CudaMallocExceptionGpuA() : std::runtime_error("") {}
+    int error() const {
+        return errorState;
+    }
+    explicit CudaException(cudaError_t err) : errorState(static_cast<int>(err)) {}
 };
 
-class CudaMallocExceptionGpuB: public std::runtime_error {
+class DivisionByZeroException {
 public:
-    explicit CudaMallocExceptionGpuB() : std::runtime_error("") {}
+    int error() const {
+        const int divByZero = -1;
+        return divByZero;
+    }
+    DivisionByZeroException() = default; // Default constructor
 };
 
-class CudaMallocExceptionGpuC: public std::runtime_error {
-public:
-    explicit CudaMallocExceptionGpuC() : std::runtime_error("") {}
-};
-
-class CudaMallocExceptionErrorFlag : public std::runtime_error {
-public:
-    explicit CudaMallocExceptionErrorFlag() : std::runtime_error("") {}
-};
-
-class CudaMemcpyExceptionA : public std::runtime_error {
-public:
-    explicit CudaMemcpyExceptionA() : std::runtime_error("") {}
-};
-
-class CudaMemcpyExceptionB : public std::runtime_error {
-public:
-    explicit CudaMemcpyExceptionB() : std::runtime_error("") {}
-};
-
-class CudaMemcpyExceptionC : public std::runtime_error {
-public:
-    explicit CudaMemcpyExceptionC() : std::runtime_error("") {}
-};
-
-class CudaMemcpyExceptionErrorFlag : public std::runtime_error {
-public:
-    explicit CudaMemcpyExceptionErrorFlag() : std::runtime_error("") {}
-};
-
-class KernelLaunchException : public std::runtime_error {
-public:
-    explicit KernelLaunchException() : std::runtime_error("") {}
-};
-
-class DivisionByZeroException : public std::runtime_error {
-public:
-    explicit DivisionByZeroException() : std::runtime_error("") {}
-};
+#endif // EXCEPTIONS_H

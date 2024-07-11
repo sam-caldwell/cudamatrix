@@ -4,8 +4,11 @@
  * CUDA Kernel function: Matrix Multiply
  *
  *      c = a x b
+ *
+ *      Note: we do not check dimensions of the matrices for performance
+ *            and we expect that the caller would have done this instead.
  */
-__global__ void matrixMultiplyKernel(double* a, double* b, double* c, int rows, int cols) {
+__global__ void matrixMultiplyKernel(double* a, double* b, double* c, int rows, int cols, int *gpuError) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
     int row = idx / cols;
     int col = idx % cols;
@@ -16,4 +19,5 @@ __global__ void matrixMultiplyKernel(double* a, double* b, double* c, int rows, 
         }
         c[row * cols + col] = value;
     }
+    *gpuError=0;
 }
