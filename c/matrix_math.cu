@@ -1,133 +1,269 @@
 // matrix_add.cu
-#include <stdlib.h>
 #include <cuda_runtime.h>
+#include <iostream>
+#include "exceptions.h"
+#include "kernels/checkZeroKernel.h"
+#include "kernels/add.h"
+#include "kernels/divide.h"
+#include "kernels/multiply.h"
 
-#define THREADS_PER_BLOCK 256
-
-__global__ void matrixAddKernel(double* a, double* b, double* result, int size) {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < size) {
-        result[idx] = a[idx] + b[idx];
-    }
-}
-
-extern "C" void matrix_add(double* a, double* b, double* result, int rows, int cols) {
+#define CUDA_FREE_ALL(a,b,c) \
+    cudaFree(a); \
+    cudaFree(b); \
+    cudaFree(c);
+/*
+ * CUDA interface function: Add two Matrices
+ *
+ *      c = a + b, return error_code (-1) or success (0)
+ */
+extern "C" int matrix_add(double* a, double* b, double* c, int rows, int cols) {
     int size = rows * cols;
-    double* d_a;
-    double* d_b;
-    double* d_result;
+    double* gpu_a = nullptr;
+    double* gpu_b = nullptr;
+    double* gpu_c = nullptr;
 
-    cudaMalloc((void**)&d_a, size * sizeof(double));
-    cudaMalloc((void**)&d_b, size * sizeof(double));
-    cudaMalloc((void**)&d_result, size * sizeof(double));
+    try {
+        cudaError_t err;
+        // Allocate device memory
+        err = cudaMalloc((void**)&gpu_a, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuA();
 
-    cudaMemcpy(d_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
+        err = cudaMalloc((void**)&gpu_b, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuB();
 
-    //ToDo: evaluate whether we really need 256 threadsPerBlock
-    int threadsPerBlock = THREADS_PER_BLOCK;
-    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-    matrixAddKernel<<<blocksPerGrid, threadsPerBlock>>>(d_a, d_b, d_result, size);
+        err = cudaMalloc((void**)&gpu_c, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuC();
 
-    cudaMemcpy(result, d_result, size * sizeof(double), cudaMemcpyDeviceToHost);
+        // Copy data to device
+        err = cudaMemcpy(gpu_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionA();
 
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_result);
+        err = cudaMemcpy(gpu_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionB();
+
+        // Launch kernel
+        int threadsPerBlock = 256;
+        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+        matrixAddKernel<<<blocksPerGrid, threadsPerBlock>>>(gpu_a, gpu_b, gpu_c, size);
+
+        err = cudaGetLastError();
+        if (err != cudaSuccess) throw KernelLaunchException();
+
+        // Copy result back to host
+        err = cudaMemcpy(c, gpu_c, size * sizeof(double), cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionC();
+
+    } catch (const CudaMallocExceptionGpuA& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -1;
+    } catch (const CudaMallocExceptionGpuB& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -2;
+    } catch (const CudaMallocExceptionGpuC& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -3;
+    } catch (const CudaMallocExceptionErrorFlag& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -4;
+    } catch (const CudaMemcpyExceptionA& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -5;
+    } catch (const CudaMemcpyExceptionB& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -6;
+    } catch (const CudaMemcpyExceptionC& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -7;
+    } catch (const KernelLaunchException& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -8;
+    } catch (const DivisionByZeroException& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -9;
+    } catch (const std::runtime_error& e) {
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -1;
+     }
+    CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+    return 0;  // Return success code
 }
 
-__global__ void checkZeroKernel(double* b, int size, int* errorFlag) {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < size && b[idx] == 0) {
-        *errorFlag = 1;
-    }
-}
-
-__global__ void matrixDivideKernel(double* a, double* b, double* result, int size) {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < size) {
-        result[idx] = a[idx] / b[idx];
-    }
-}
-
-extern "C" int matrix_divide(double* a, double* b, double* result, int rows, int cols) {
+/*
+ * CUDA interface function: Divide two Matrices
+ *
+ *      c = a / b, return error_code (-1) or success (0)
+ */
+extern "C" int matrix_divide(double* a, double* b, double* c, int rows, int cols) {
     int size = rows * cols;
-    double* d_a;
-    double* d_b;
-    double* d_result;
-    int* d_errorFlag;
-    int h_errorFlag = 0;
+    double* gpu_a = nullptr;
+    double* gpu_b = nullptr;
+    double* gpu_c = nullptr;
 
-    cudaMalloc((void**)&d_a, size * sizeof(double));
-    cudaMalloc((void**)&d_b, size * sizeof(double));
-    cudaMalloc((void**)&d_result, size * sizeof(double));
-    cudaMalloc((void**)&d_errorFlag, sizeof(int));
+    try {
+        int* d_errorFlag = 0;
+        cudaError_t err;
+        // Allocate device memory
+        err = cudaMalloc((void**)&gpu_a, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuA();
 
-    cudaMemcpy(d_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_errorFlag, &h_errorFlag, sizeof(int), cudaMemcpyHostToDevice);
+        err = cudaMalloc((void**)&gpu_b, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuB();
 
-    // Check for zero values in divisor
-    int threadsPerBlock = THREADS_PER_BLOCK;
-    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-    checkZeroKernel<<<blocksPerGrid, threadsPerBlock>>>(d_b, size, d_errorFlag);
+        err = cudaMalloc((void**)&gpu_c, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuC();
 
-    cudaMemcpy(&h_errorFlag, d_errorFlag, sizeof(int), cudaMemcpyDeviceToHost);
+        err = cudaMalloc((void**)&d_errorFlag, sizeof(int));
+        if (err != cudaSuccess) throw CudaMallocExceptionErrorFlag();
 
-    if (h_errorFlag != 0) {
-        cudaFree(d_a);
-        cudaFree(d_b);
-        cudaFree(d_result);
-        cudaFree(d_errorFlag);
-        return h_errorFlag;  // Division by zero detected
-    }
+        // Copy data to device
+        err = cudaMemcpy(gpu_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionA();
 
-    // Perform the division if no zero values are found
-    matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(d_a, d_b, d_result, size);
+        err = cudaMemcpy(gpu_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionB();
 
-    cudaMemcpy(result, d_result, size * sizeof(double), cudaMemcpyDeviceToHost);
+        int h_errorFlag = 0;
+        err = cudaMemcpy(d_errorFlag, &h_errorFlag, sizeof(int), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionErrorFlag();
 
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_result);
-    cudaFree(d_errorFlag);
+        // Check for zero values in divisor
+        int threadsPerBlock = 256;
+        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+        checkZeroKernel<<<blocksPerGrid, threadsPerBlock>>>(gpu_b, size, d_errorFlag);
 
-    return h_errorFlag;
-}
+        err = cudaMemcpy(&h_errorFlag, d_errorFlag, sizeof(int), cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionErrorFlag();
 
-__global__ void matrixMultiplyKernel(double* a, double* b, double* result, int rows, int cols) {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    int row = idx / cols;
-    int col = idx % cols;
-    if (row < rows && col < cols) {
-        double value = 0.0;
-        for (int k = 0; k < cols; ++k) {
-            value += a[row * cols + k] * b[k * cols + col];
+        if (h_errorFlag != 0) {
+            throw DivisionByZeroException();
         }
-        result[row * cols + col] = value;
+
+        // Perform the division if no zero values are found
+        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpu_a, gpu_b, gpu_c, size);
+
+        err = cudaGetLastError();
+        if (err != cudaSuccess) throw KernelLaunchException();
+
+        // Copy result back to host
+        err = cudaMemcpy(c, gpu_c, size * sizeof(double), cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionC();
+
+    } catch (const CudaMallocExceptionGpuA& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -1;
+     } catch (const CudaMallocExceptionGpuB& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -2;
+     } catch (const CudaMallocExceptionGpuC& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -3;
+     } catch (const CudaMallocExceptionErrorFlag& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -4;
+     } catch (const CudaMemcpyExceptionA& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -5;
+     } catch (const CudaMemcpyExceptionB& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -6;
+     } catch (const CudaMemcpyExceptionC& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -7;
+     } catch (const KernelLaunchException& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -8;
+     } catch (const DivisionByZeroException& e){
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -9;
+     } catch (const std::runtime_error& e) {
+         CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+         return -1;
     }
+
+    // Free memory
+    CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+    return 0;  // Return success code
 }
 
-extern "C" void matrix_multiply(double* a, double* b, double* result, int rows, int cols) {
+/*
+ * CUDA interface function: Multiply two Matrices
+ *
+ *      c = a * b, return error_code (-1) or success (0)
+ */
+extern "C" int matrix_multiply(double* a, double* b, double* c, int rows, int cols) {
     int size = rows * cols;
-    double* d_a;
-    double* d_b;
-    double* d_result;
+    double* gpu_a = nullptr;
+    double* gpu_b = nullptr;
+    double* gpu_c = nullptr;
+    int* d_errorFlag = 0;
 
-    cudaMalloc((void**)&d_a, size * sizeof(double));
-    cudaMalloc((void**)&d_b, size * sizeof(double));
-    cudaMalloc((void**)&d_result, size * sizeof(double));
+    try {
+        cudaError_t err;
+        // Allocate device memory
+        err = cudaMalloc((void**)&gpu_a, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuA();
 
-    cudaMemcpy(d_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
+        err = cudaMalloc((void**)&gpu_b, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuB();
 
-    int threadsPerBlock = THREADS_PER_BLOCK;
-    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-    matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(d_a, d_b, d_result, rows, cols);
+        err = cudaMalloc((void**)&gpu_c, size * sizeof(double));
+        if (err != cudaSuccess) throw CudaMallocExceptionGpuC();
 
-    cudaMemcpy(result, d_result, size * sizeof(double), cudaMemcpyDeviceToHost);
+        err = cudaMalloc((void**)&d_errorFlag, sizeof(int));
+        if (err != cudaSuccess) throw CudaMallocExceptionErrorFlag();
 
-    cudaFree(d_a);
-    cudaFree(d_b);
-    cudaFree(d_result);
+        // Copy data to device
+        err = cudaMemcpy(gpu_a, a, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionA();
+
+        err = cudaMemcpy(gpu_b, b, size * sizeof(double), cudaMemcpyHostToDevice);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionA();
+
+        // Launch kernel
+        int threadsPerBlock = 256;
+        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpu_a, gpu_b, gpu_c, rows, cols);
+
+        err = cudaGetLastError();
+        if (err != cudaSuccess) throw KernelLaunchException();
+
+        // Copy result back to host
+        err = cudaMemcpy(c, gpu_c, size * sizeof(double), cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess) throw CudaMemcpyExceptionC();
+
+    } catch (const CudaMallocExceptionGpuA& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -1;
+    } catch (const CudaMallocExceptionGpuB& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -2;
+    } catch (const CudaMallocExceptionGpuC& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -3;
+    } catch (const CudaMallocExceptionErrorFlag& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -4;
+    } catch (const CudaMemcpyExceptionA& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -5;
+    } catch (const CudaMemcpyExceptionB& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -6;
+    } catch (const CudaMemcpyExceptionC& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -7;
+    } catch (const KernelLaunchException& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -8;
+    } catch (const DivisionByZeroException& e){
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -9;
+    } catch (const std::runtime_error& e) {
+        CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+        return -1;
+    }
+    // Free memory
+    CUDA_FREE_ALL(gpu_a,gpu_b,gpu_c);
+
+    return 0;  // Return success code
 }
