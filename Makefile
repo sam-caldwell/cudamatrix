@@ -1,5 +1,7 @@
 .PHONY: all clean build build/cuda build/linux build/darwin build/windows
 
+LD_LIBRARY_PATH:=$(shell pwd)/build
+
 all: clean build
 
 build: build/linux build/darwin build/windows
@@ -29,6 +31,5 @@ build/cuda:
 run: build
 	go run examples/add2matrices/main.go
 
-LD_LIBRARY_PATH:=$(LD_LIBRARY_PATH):$(pwd)/build
 test: clean build
 	go test -v .
