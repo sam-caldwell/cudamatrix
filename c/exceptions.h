@@ -3,6 +3,11 @@
 
 #include <cuda_runtime.h>
 
+/*
+ * General Cuda exception to be
+ * thrown so we can return a numeric
+ * error state to our golang caller.
+ */
 class CudaException {
 private:
     int errorState;
@@ -13,6 +18,17 @@ public:
     explicit CudaException(cudaError_t err) : errorState(static_cast<int>(err)) {}
 };
 
+/*
+ * A DivisionByZeroException our C code
+ * can call on signal from CUDA when the
+ * divisor is zero.
+ *
+ * To the mathematician I dated years ago,
+ * every DivisionByZeroException reminds
+ * me of my cheesy joke...and your hour-
+ * long lecture of how mathematically dumb
+ * it was.  Cheers!
+ */
 class DivisionByZeroException {
 public:
     int error() const {
