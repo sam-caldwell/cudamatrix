@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include "exceptions.h"
+#include "printMatrix.h"
 #include "freeMatrixMemory.h"
 #include "initializeGpuMatrix.h"
 #include "initializeGpuErrorFlag.h"
@@ -30,10 +31,20 @@ extern "C" int matrix_add(double* matrixA, double* matrixB, double* matrixC, int
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
         initializeGpuErrorFlag(gpuError);
 
+        std::cout << "launch kernel" << std::endl;
         matrixAddKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
+        std::cout << "launch complete" << std::endl;
 
         captureGpuErrors(gpuError);
         copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
+
+        std::cout << "debugging...matrixC should not be full of zeroes"<< std::endl;
+
+        printGpuMatrix(matrixA, rows * cols);
+        printGpuMatrix(matrixB, rows * cols);
+        printMatrix(matrixC, rows, cols);
+
+
     } catch (const CudaException& e){
         freeMatrixMemory(gpuMatrixA,gpuMatrixB,gpuMatrixC, gpuError);
         return e.error();

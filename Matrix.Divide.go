@@ -15,12 +15,8 @@ import (
 	"unsafe"
 )
 
-// Add adds multiple matrices and returns the result matrix.  (return nil on error state)
-func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
-
-	if rhs == nil {
-		return nil, fmt.Errorf(errors.NilPointer)
-	}
+// Divide performs element-wise division of two matrices and returns the result matrix.  (return nil on error state)
+func (lhs *Matrix) Divide(rhs *Matrix) (result *Matrix, err error) {
 
 	lhs.lock.RLock()
 	defer lhs.lock.RUnlock()
@@ -32,8 +28,7 @@ func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
 		return nil, fmt.Errorf(errors.MatrixDimensionMismatch)
 	}
 
-	result, err = NewMatrix(lhs.data.rows(), lhs.data.cols())
-	if err != nil {
+	if result, err = NewMatrix(lhs.data.rows(), lhs.data.cols()); err != nil {
 		return nil, err
 	}
 
@@ -44,8 +39,7 @@ func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
 	rhsData := *rhs.flatten()
 	resultData := make([]float64, rows*cols)
 
-	var errorCode C.int
-	errorCode = C.matrix_add(
+	errorCode := C.matrix_divide(
 		(*C.double)(unsafe.Pointer(&lhsData[0])),
 		(*C.double)(unsafe.Pointer(&rhsData[0])),
 		(*C.double)(unsafe.Pointer(&resultData[0])),
@@ -53,21 +47,9 @@ func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
 		C.int(cols),
 	)
 
-	if err = CintToError(errorCode); err != nil {
-		return nil, err
+	if errorCode != 0 {
+		return nil, fmt.Errorf(errors.DivisionByZero)
 	}
-
-	// Debugging...
-	print1dArray := func(arr *[]float64) {
-		for _, e := range *arr {
-			fmt.Printf("%04.1f ", e)
-		}
-		fmt.Println("")
-	}
-	print1dArray(&lhsData)
-	print1dArray(&rhsData)
-	print1dArray(&resultData)
-	// ------------
 
 	err = result.from1dArray(&resultData)
 

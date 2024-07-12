@@ -1,6 +1,9 @@
 package cudamatrix
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/sam-caldwell/errors"
+)
 
 // from1dArray converts a flat 1D array to its 2D equivalent.
 //
@@ -14,7 +17,7 @@ func (lhs *Matrix) from1dArray(flatData *[]float64) error {
 
 	// Ensure the length of the input matches the expected size
 	if uint(len(*flatData)) != cols*rows {
-		return fmt.Errorf("input array size does not match matrix dimensions")
+		return fmt.Errorf(errors.MatrixDimensionMismatch)
 	}
 
 	// Copy data from the 1D array to the 2D matrix
