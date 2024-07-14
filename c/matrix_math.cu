@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include "exceptions.h"
+#include "initializeCuda.h"
 #include "printMatrix.h"
 #include "freeMatrixMemory.h"
 #include "initializeGpuMatrix.h"
@@ -10,6 +11,7 @@
 #include "kernels/add.h"
 #include "kernels/divide.h"
 #include "kernels/multiply.h"
+#include "getCudaProperties.h"
 
 /*
  * CUDA interface function: Add two Matrices
@@ -23,6 +25,8 @@ extern "C" int matrixAdd(double *matrixA, double *matrixB, double *matrixC, int 
     double* gpuMatrixC = nullptr;
     int gpuError = 0;
     try{
+        initializeCuda(0);
+        getCudaProperties(); //added for debugging.
         initializeGpuErrorFlag(&gpuError);
         initializeGpuMatrix(matrixA, gpuMatrixA, size, true);
         initializeGpuMatrix(matrixB, gpuMatrixB, size, true);
@@ -36,10 +40,13 @@ extern "C" int matrixAdd(double *matrixA, double *matrixB, double *matrixC, int 
         captureGpuErrors(&gpuError);
 
         std::cout << "launch kernel:" << std::endl;
-        dim3 blockSize(16, 16);
-        dim3 numBlocks((cols + blockSize.x - 1) / blockSize.x, (rows + blockSize.y - 1) / blockSize.y);
-        matrixAddKernel<<<numBlocks, blockSize>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, &gpuError);
+
+        // Launch kernel
+        int threadsPerBlock = 16;
+        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+        matrixAddKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, &gpuError);
         cudaDeviceSynchronize();
+
 
         captureGpuErrors(&gpuError);
 
@@ -78,8 +85,8 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
     double* gpuMatrixB = nullptr;
     double* gpuMatrixC = nullptr;
     int* gpuError = nullptr;
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+//    int threadsPerBlock = 256;
+//    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
 
     try {
         initializeGpuMatrix(matrixA, gpuMatrixA, size, true);
@@ -87,7 +94,7 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
         initializeGpuErrorFlag(gpuError);
 
-        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
+//        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
         cudaDeviceSynchronize();
 
         captureGpuErrors(gpuError);
@@ -121,8 +128,8 @@ extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC,
     double* gpuMatrixB = nullptr;
     double* gpuMatrixC = nullptr;
     int* gpuError = nullptr;
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+//    int threadsPerBlock = 256;
+//    int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
 
     try {
         initializeGpuMatrix(matrixA, gpuMatrixA, size, true);
@@ -130,7 +137,7 @@ extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC,
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
         initializeGpuErrorFlag(gpuError);
 
-        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, gpuError);
+//        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
         cudaDeviceSynchronize();
 
         captureGpuErrors(gpuError);

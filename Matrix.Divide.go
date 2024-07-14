@@ -39,7 +39,7 @@ func (lhs *Matrix) Divide(rhs *Matrix) (result *Matrix, err error) {
 	rhsData := *rhs.flatten()
 	resultData := make([]float64, rows*cols)
 
-	errorCode := C.matrix_divide(
+	errorCode := C.matrixDivide(
 		(*C.double)(unsafe.Pointer(&lhsData[0])),
 		(*C.double)(unsafe.Pointer(&rhsData[0])),
 		(*C.double)(unsafe.Pointer(&resultData[0])),

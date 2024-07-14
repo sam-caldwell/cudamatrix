@@ -36,7 +36,7 @@ func (lhs *Matrix) Multiply(rhs *Matrix) (result *Matrix, err error) {
 	rhsData := *rhs.flatten()
 	resultData := make([]float64, lhs.data.rows()*lhs.data.cols())
 
-	C.matrix_multiply(
+	C.matrixMultiply(
 		(*C.double)(unsafe.Pointer(&lhsData[0])),
 		(*C.double)(unsafe.Pointer(&rhsData[0])),
 		(*C.double)(unsafe.Pointer(&resultData[0])),
