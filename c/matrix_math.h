@@ -3,15 +3,12 @@
 #define MAT_ADD_H
 
 // c = a + b
-int matrix_add(double* a, double* b, double* c, int rows, int cols);
+int matrixAdd(double* a, double* b, double* c, int rows, int cols);
 
 // c = a * b
-int matrix_multiply(double* a, double* b, double* c, int rows, int cols);
+int matrixMultiply(double* a, double* b, double* c, int rows, int cols);
 
 // c = a / b
-int matrix_divide(double* a, double* b, double* c, int rows, int cols);
-
-
-
+int matrixDivide(double* a, double* b, double* c, int rows, int cols);
 
 #endif
