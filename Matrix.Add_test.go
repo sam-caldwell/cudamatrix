@@ -1,25 +1,26 @@
 package cudamatrix
 
 import (
+	"fmt"
 	"github.com/sam-caldwell/errors"
 	"testing"
 )
 
 func TestMatrix_Add(t *testing.T) {
 
-	//dumpMatrix := func(M *Matrix) {
-	//	var v float64
-	//	fmt.Print("----\n")
-	//	for r := uint(0); r < M.Rows(); r++ {
-	//		fmt.Printf("| ")
-	//		for c := uint(0); c < M.Cols(); c++ {
-	//			v, _ = M.Get(r, c)
-	//			fmt.Printf("%04.1f ", v)
-	//		}
-	//		fmt.Print(" |\n")
-	//	}
-	//	fmt.Print("----\n")
-	//}
+	dumpMatrix := func(M *Matrix) {
+		var v float64
+		fmt.Print("----\n")
+		for r := uint(0); r < M.Rows(); r++ {
+			fmt.Printf("| ")
+			for c := uint(0); c < M.Cols(); c++ {
+				v, _ = M.Get(r, c)
+				fmt.Printf("%04.1f ", v)
+			}
+			fmt.Print(" |\n")
+		}
+		fmt.Print("----\n")
+	}
 
 	t.Run("Add nil rhs to Matrix", func(t *testing.T) {
 		var A Matrix  //(empty)
@@ -88,10 +89,10 @@ func TestMatrix_Add(t *testing.T) {
 					t.Fatal(err)
 				}
 				var v float64
-				//t.Log("Addition has been performed...")
+				t.Log("Addition has been performed...")
 				//dumpMatrix(A)
 				//dumpMatrix(B)
-				//dumpMatrix(C)
+				dumpMatrix(C)
 				{
 					if v, err = C.Get(0, 0); err != nil || v != 0 {
 						t.Fatalf("value mismatch at (0,0):%v | %v", v, err)
