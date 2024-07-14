@@ -17,7 +17,6 @@ __global__ void matrixAddKernel(double *a, double *b, double *c, int size, int *
         c[index] = a[index] + b[index];
         return;
     }
+
     atomicExch(gpuError, boundCheckError);
-//    *gpuError = boundCheckError;
-    return;
 }
