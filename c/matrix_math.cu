@@ -98,6 +98,8 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
         print1dMatrix(gpuMatrixB, size);
         print1dMatrix(gpuMatrixC, size);
 
+        copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
+
     } catch (const CudaException& e){
         freeMatrixMemory(gpuMatrixA,gpuMatrixB,gpuMatrixC, &gpuError);
         return e.error();
@@ -147,6 +149,8 @@ extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC,
         print1dMatrix(gpuMatrixA, size);
         print1dMatrix(gpuMatrixB, size);
         print1dMatrix(gpuMatrixC, size);
+
+        copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
 
     } catch (const CudaException& e){
         freeMatrixMemory(gpuMatrixA,gpuMatrixB,gpuMatrixC, &gpuError);
