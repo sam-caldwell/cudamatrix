@@ -16,18 +16,18 @@ build/linux: build/cuda
 build/darwin: build/cuda
 build/windows: build/cuda
 
+CUDA_ARCH:=-arch=sm_50
+
 build/cuda:
-	echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
-	# Build for Linux
-	nvcc -Xcompiler -fPIC -c -o build/matrix_math_linux_amd64.o c/matrix_math.cu
+	nvcc -Xcompiler -fPIC ${CUDA_ARCH} -c -o build/matrix_math_linux_amd64.o c/matrix_math.cu
 	nvcc -shared -o build/libmatrix_math_linux_amd64.so build/matrix_math_linux_amd64.o
 
 	# Build for macOS
-	nvcc -Xcompiler -fPIC -c -o build/matrix_math_darwin_amd64.o c/matrix_math.cu
+	nvcc -Xcompiler -fPIC ${CUDA_ARCH} -c -o build/matrix_math_darwin_amd64.o c/matrix_math.cu
 	nvcc -shared -o build/libmatrix_math_darwin_amd64.dylib build/matrix_math_darwin_amd64.o
 
 	# Build for Windows
-	nvcc -Xcompiler -fPIC -c -o build/matrix_math_windows_amd64.o c/matrix_math.cu
+	nvcc -Xcompiler -fPIC ${CUDA_ARCH} -c -o build/matrix_math_windows_amd64.o c/matrix_math.cu
 	nvcc -shared -o build/libmatrix_math_windows_amd64.dll build/matrix_math_windows_amd64.o
 
 # Use the following target to run the example
