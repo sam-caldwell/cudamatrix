@@ -19,6 +19,21 @@ public:
 };
 
 /*
+ * General Program exception to be
+ * thrown so we can return a numeric
+ * error state to our golang caller.
+ */
+class ProgramError {
+private:
+    int errorState;
+public:
+    int error() {
+        return errorState;
+    }
+    explicit ProgramError(int err) : errorState(err){}
+};
+
+/*
  * A DivisionByZeroException our C code
  * can call on signal from CUDA when the
  * divisor is zero.
