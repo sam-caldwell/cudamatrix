@@ -88,7 +88,7 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
 
         int threadsPerBlock = 16;
         int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-//        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
+//        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, &gpuError);
         cudaDeviceSynchronize();
 
         captureGpuErrors(&gpuError);
@@ -140,7 +140,9 @@ extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC,
         initializeGpuMatrix(matrixB, gpuMatrixB, size, true);
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
 
-//        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
+        int threadsPerBlock = 16;
+        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
+        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, &gpuError);
         cudaDeviceSynchronize();
 
         captureGpuErrors(&gpuError);
