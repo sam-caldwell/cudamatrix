@@ -27,7 +27,7 @@ class ProgramError {
 private:
     int errorState;
 public:
-    int error() {
+    int error() const {
         return errorState;
     }
     explicit ProgramError(int err) : errorState(err){}
