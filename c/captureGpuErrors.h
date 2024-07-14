@@ -15,22 +15,26 @@
  *      exception.
  */
 void captureGpuErrors(int *gpuErrorFlag){
-
-    int hostErrorFlag = 0;
     const int divByZero = -1;
-    cudaError_t err = cudaGetLastError();
+    cudaError_t err = cudaGetLastError(); //capture last error now before we mess it up accidentally.
 
-    // Get the last CUDA error state
-    err = cudaGetLastError();
-    if (err != cudaSuccess) throw CudaException(err);
+    std::cout << "captureGpuErrors() start" << std::endl;
 
-    if (gpuErrorFlag){
-        // Copy the CUDA kernel error state (things we raised in our own programming)
-        err = cudaMemcpy(&hostErrorFlag, gpuErrorFlag, sizeof(int), cudaMemcpyDeviceToHost);
-
-        if (err != cudaSuccess) throw CudaException(err);
-        if (hostErrorFlag == divByZero) throw DivisionByZeroException();
+    if(*gpuErrorFlag == divByZero) {
+        std::cout << "   captureGpuErrors detected divByZero" << std::endl;
+        throw DivisionByZeroException();
     }
+
+    if (*gpuErrorFlag != 0) {
+        std::cout << "   captureGpuErrors detected error in gpuErrorFlag" << std::endl;
+        throw ProgramError(*gpuErrorFlag);
+    }
+
+    if (err != cudaSuccess) {
+        std::cout << "   captureGpuErrors detected error in cudaGetLastError()" << std::endl;
+        throw CudaException(err);
+    }
+
 }
 
 #endif
