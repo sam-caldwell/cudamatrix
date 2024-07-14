@@ -88,11 +88,10 @@ func TestMatrix_Add(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var v float64
-				t.Log("Addition has been performed...")
-				//dumpMatrix(A)
-				//dumpMatrix(B)
+				dumpMatrix(A)
+				dumpMatrix(B)
 				dumpMatrix(C)
+				var v float64
 				{
 					if v, err = C.Get(0, 0); err != nil || v != 0 {
 						t.Fatalf("value mismatch at (0,0):%v | %v", v, err)

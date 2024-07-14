@@ -16,7 +16,6 @@ import (
 
 // Add adds multiple matrices and returns the result matrix.  (return nil on error state)
 func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
-	const cudaMemAttachGlobal = 0x01
 
 	if rhs == nil {
 		return nil, fmt.Errorf(errors.NilPointer)
@@ -57,7 +56,7 @@ func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
 			return nil, err
 		}
 	}
-	// ------------
+
 	result, err = NewMatrix(uint(rows), uint(cols))
 	if err != nil {
 		return nil, err
