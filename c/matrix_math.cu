@@ -45,6 +45,8 @@ extern "C" int matrixAdd(double *matrixA, double *matrixB, double *matrixC, int 
         print1dMatrix(gpuMatrixB, size);
         print1dMatrix(gpuMatrixC, size);
 
+        copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
+
     } catch (const CudaException& e){
         freeMatrixMemory(gpuMatrixA,gpuMatrixB,gpuMatrixC, &gpuError);
         return e.error();
