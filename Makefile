@@ -16,9 +16,14 @@ build/linux: build/cuda
 build/darwin: build/cuda
 build/windows: build/cuda
 
-CUDA_ARCH:=-arch=sm_50
+CUDA_ARCH:=-gencode arch=compute_50,code=sm_50 \
+	-gencode arch=compute_60,code=sm_60 \
+	-gencode arch=compute_70,code=sm_70 \
+	-gencode arch=compute_80,code=sm_80
 
 build/cuda:
+	echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
+	# Build for Linux
 	nvcc -Xcompiler -fPIC ${CUDA_ARCH} -c -o build/matrix_math_linux_amd64.o c/matrix_math.cu
 	nvcc -shared -o build/libmatrix_math_linux_amd64.so build/matrix_math_linux_amd64.o
 
