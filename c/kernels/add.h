@@ -18,16 +18,16 @@
 //
 //    *gpuError=0;
 //}
-__global__ void matrixAddKernel(double *a, double *b, double *c, int rows, int cols, int *gpuError) {
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    int column = blockIdx.y * blockDim.y + threadIdx.y;
+__global__ void matrixAddKernel(double *a, double *b, double *c, int size, int *gpuError) {
+    const int success = 0;
+    const int boundCheckError = -1;
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
 
-    if (row < rows && column < cols) {
-        int index = row * cols + column;
+    if (index < size) {
         c[index] = a[index] + b[index];
-        *gpuError=0;
+        *gpuError=success;
         return;
     }
-    *gpuError=-1;
+    *gpuError=boundCheckError;
     return;
 }

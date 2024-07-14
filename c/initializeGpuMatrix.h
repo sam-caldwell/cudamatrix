@@ -13,7 +13,7 @@
  */
 void initializeGpuMatrix(double* hostMatrix, double*& gpuMatrix, int size, bool copyData){
     cudaError_t err;
-    err = cudaMalloc((void**)&gpuMatrix, size * sizeof(double));
+    err = cudaMallocManaged((void**)&gpuMatrix, size *sizeof(double), cudaMemAttachGlobal);
     if (err != cudaSuccess) throw CudaException(err);
 
     if (copyData){
