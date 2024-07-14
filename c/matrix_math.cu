@@ -7,7 +7,6 @@
 #include "initializeGpuErrorFlag.h"
 #include "copyGpuMatrixToHost.h"
 #include "captureGpuErrors.h"
-#include "waitOnKernel.h"
 #include "kernels/add.h"
 #include "kernels/divide.h"
 #include "kernels/multiply.h"
@@ -89,7 +88,7 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
         initializeGpuErrorFlag(gpuError);
 
         matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, gpuError);
-        waitOnKernel();
+        cudaDeviceSynchronize();
 
         captureGpuErrors(gpuError);
         copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
@@ -132,7 +131,7 @@ extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC,
         initializeGpuErrorFlag(gpuError);
 
         matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, gpuError);
-        waitOnKernel();
+        cudaDeviceSynchronize();
 
         captureGpuErrors(gpuError);
         copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
