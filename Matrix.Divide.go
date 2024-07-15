@@ -18,6 +18,10 @@ import (
 // Divide performs element-wise division of two matrices and returns the result matrix.  (return nil on error state)
 func (lhs *Matrix) Divide(rhs *Matrix) (result *Matrix, err error) {
 
+	if rhs == nil {
+		return nil, fmt.Errorf(errors.NilPointer)
+	}
+
 	lhs.lock.RLock()
 	defer lhs.lock.RUnlock()
 
