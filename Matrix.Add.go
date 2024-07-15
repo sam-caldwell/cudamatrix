@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-// Add adds multiple matrices and returns the result matrix.  (return nil on error state)
+// Add adds two matrices and returns the result matrix.  (return nil on error state)
 func (lhs *Matrix) Add(rhs *Matrix) (result *Matrix, err error) {
 
 	if rhs == nil {
