@@ -11,6 +11,9 @@
  */
 
 void freeMatrixMemory(double* gpuMatrixA, double* gpuMatrixB, double* gpuMatrixC, int *error){
+    std::cout << "freeMatrixMemory start" << std::endl;
+
+    cudaDeviceSynchronize();
 
     if (gpuMatrixA) cudaFree(gpuMatrixA);
 
@@ -19,6 +22,6 @@ void freeMatrixMemory(double* gpuMatrixA, double* gpuMatrixB, double* gpuMatrixC
     if (gpuMatrixC) cudaFree(gpuMatrixC);
 
     if (error) cudaFree(error);
-
+    std::cout << "freeMatrixMemory end (no error)" << std::endl;
 }
 #endif
