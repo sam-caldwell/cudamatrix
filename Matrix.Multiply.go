@@ -34,19 +34,31 @@ func (lhs *Matrix) Multiply(rhs *Matrix) (result *Matrix, err error) {
 
 	rows := int(lhs.data.rows())
 	cols := int(lhs.data.cols())
+	linearSize := lhs.data.rows() * lhs.data.cols()
 
-	resultData := make([]float64, lhs.data.rows()*lhs.data.cols())
+	if rows == 0 || cols == 0 {
+		return nil, fmt.Errorf(errors.BoundsCheckError)
+	}
+
+	resultData := make([]float64, linearSize)
 	{
 		lhsData := *lhs.flatten()
 		rhsData := *rhs.flatten()
 
-		C.matrixMultiply(
+		var errorCode C.int
+		errorCode = C.matrixMultiply(
 			(*C.double)(unsafe.Pointer(&lhsData[0])),
 			(*C.double)(unsafe.Pointer(&rhsData[0])),
 			(*C.double)(unsafe.Pointer(&resultData[0])),
-			C.int(int(lhs.data.rows())),
-			C.int(int(lhs.data.cols())),
+			C.int(rows),
+			C.int(cols),
 		)
+
+		if errorCode != CudaSuccess {
+			if err = CintToError(errorCode); err != nil {
+				return nil, err
+			}
+		}
 	}
 	result, err = NewMatrix(uint(rows), uint(cols))
 	if err != nil {

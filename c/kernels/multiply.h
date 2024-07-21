@@ -25,5 +25,5 @@ __global__ void matrixMultiplyKernel(double* a, double* b, double* c, int rows, 
         return;
     }
 
-    atomicExch(gpuError, boundCheckError);
+//    atomicExch(gpuError, boundCheckError);
 }

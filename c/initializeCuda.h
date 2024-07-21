@@ -24,6 +24,12 @@ void initializeCuda(int desiredDevice) {
         throw CudaException(cudaErrorNoDevice);
     }
 
+    err = cudaDeviceReset();
+    if (err != cudaSuccess) {
+        throw CudaException(err);
+    }
+    cudaDeviceSynchronize();
+
     err = cudaSetDevice(desiredDevice);
     if (err != cudaSuccess) {
         throw CudaException(err);

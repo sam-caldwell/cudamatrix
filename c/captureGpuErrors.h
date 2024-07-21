@@ -21,17 +21,18 @@ void captureGpuErrors(int *gpuErrorFlag){
     std::cout << "captureGpuErrors() start" << std::endl;
 
     if(*gpuErrorFlag == divByZero) {
-        std::cout << "   captureGpuErrors detected divByZero" << std::endl;
+        std::cout << "captureGpuErrors detected divByZero" << std::endl;
         throw DivisionByZeroException();
     }
+    std::cout << "captureGpuErrors detected no errors from gpuErrorFlag" << std::endl;
 
     if (*gpuErrorFlag != 0) {
-        std::cout << "   captureGpuErrors detected error in gpuErrorFlag" << std::endl;
+        std::cout << "captureGpuErrors detected error in gpuErrorFlag" << std::endl;
         throw ProgramError(*gpuErrorFlag);
     }
 
     if (err != cudaSuccess) {
-        std::cout << "   captureGpuErrors detected error in cudaGetLastError()" << std::endl;
+        std::cout << "captureGpuErrors detected error in cudaGetLastError()" << std::endl;
         throw CudaException(err);
     }
 

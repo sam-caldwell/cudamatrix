@@ -30,8 +30,6 @@ extern "C" int matrixAdd(double *matrixA, double *matrixB, double *matrixC, int 
         initializeGpuMatrix(matrixB, gpuMatrixB, size, true);
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
 
-        std::cout << "launch kernel:" << std::endl;
-
         // Launch kernel
         int threadsPerBlock = 16;
         int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
@@ -40,7 +38,6 @@ extern "C" int matrixAdd(double *matrixA, double *matrixB, double *matrixC, int 
 
         captureGpuErrors(&gpuError);
 
-        std::cout << "end state:" << std::endl;
         print1dMatrix(gpuMatrixA, size);
         print1dMatrix(gpuMatrixB, size);
         print1dMatrix(gpuMatrixC, size);
@@ -84,8 +81,6 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
         initializeGpuMatrix(matrixB, gpuMatrixB, size, true);
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
 
-        std::cout << "launch kernel:" << std::endl;
-
         int threadsPerBlock = 16;
         int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
 //        matrixDivideKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, size, &gpuError);
@@ -93,10 +88,10 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
 
         captureGpuErrors(&gpuError);
 
-        std::cout << "end state:" << std::endl;
-        print1dMatrix(gpuMatrixA, size);
-        print1dMatrix(gpuMatrixB, size);
-        print1dMatrix(gpuMatrixC, size);
+//        std::cout << "end state:" << std::endl;
+//        print1dMatrix(gpuMatrixA, size);
+//        print1dMatrix(gpuMatrixB, size);
+//        print1dMatrix(gpuMatrixC, size);
 
         copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
 
@@ -127,30 +122,35 @@ extern "C" int matrixDivide(double* matrixA, double* matrixB, double* matrixC, i
  *
  */
 extern "C" int matrixMultiply(double* matrixA, double* matrixB, double* matrixC, int rows, int cols) {
-    int size = rows * cols;
+    const int size = rows * cols;
     double* gpuMatrixA = nullptr;
     double* gpuMatrixB = nullptr;
     double* gpuMatrixC = nullptr;
     int gpuError = 0;
-
     try {
         initializeCuda(0);
         initializeGpuErrorFlag(&gpuError);
+
         initializeGpuMatrix(matrixA, gpuMatrixA, size, true);
+        captureGpuErrors(&gpuError);
         initializeGpuMatrix(matrixB, gpuMatrixB, size, true);
+        captureGpuErrors(&gpuError);
         initializeGpuMatrix(matrixC, gpuMatrixC, size, false);
+        captureGpuErrors(&gpuError);
 
         int threadsPerBlock = 16;
-        int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-        matrixMultiplyKernel<<<blocksPerGrid, threadsPerBlock>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, &gpuError);
+        dim3 threads(threadsPerBlock, threadsPerBlock);
+        dim3 blocks((cols + threads.x - 1) / threads.x, (rows + threads.y - 1) / threads.y);
+        matrixMultiplyKernel<<<blocks, threads>>>(gpuMatrixA, gpuMatrixB, gpuMatrixC, rows, cols, &gpuError);
         cudaDeviceSynchronize();
+        std::cout << "kernel returned" << std::endl;
 
         captureGpuErrors(&gpuError);
 
         std::cout << "end state:" << std::endl;
-        print1dMatrix(gpuMatrixA, size);
-        print1dMatrix(gpuMatrixB, size);
-        print1dMatrix(gpuMatrixC, size);
+        print2dMatrix(gpuMatrixA, rows, cols);
+        print2dMatrix(gpuMatrixB, rows, cols);
+        print2dMatrix(gpuMatrixC, rows, cols);
 
         copyGpuMatrixToHost(matrixC, gpuMatrixC, size);
 
